@@ -124,22 +124,5 @@ async function getMeController(req,res){
   })
 }
 
-async function userController(req,res) {
-  try {
-    // Exclude password field for security
-    const users = await userModel.find().select('-password');
 
-    return res.status(200).json({
-      success: true,
-      count: users.length,
-      data: users
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to retrieve users',
-      error: error.message
-    });
-  }
-}
-module.exports={registerUserController,loginUsercontroller,logoutUserController,getMeController,userController}
+module.exports={registerUserController,loginUsercontroller,logoutUserController,getMeController}
