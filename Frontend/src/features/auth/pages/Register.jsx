@@ -5,13 +5,14 @@ import { useAuth } from '../hooks/useAuth';
 function Register() {
   
   let navigate=useNavigate();
-  const {loading,handleLogin}=useAuth();
+  const {loading,handleRegister}=useAuth();
   const [username,setUsername]=useState("");
   const [email,setEmail]=useState("");
   const [password,setPasssword]=useState("");
 
-  const handleSumbit=(e)=>{
+  const handleSumbit=async (e)=>{
     e.preventDefault();
+    await handleRegister({username,email,password})
     navigate("/")
   }
 
@@ -44,7 +45,7 @@ function Register() {
           <input onChange={(e)=>{setPasssword(e.target.value)}} 
           name="password" type="text" aria-label="enter your password" placeholder="enter your password"/>
         </div>
-          <button className='button primary-button' type="button">sumbit</button>
+          <button className='button primary-button' type="button sumbit">sumbit</button>
         </form>
         <p> have an account?
           <Link to={"/login"}> Login</Link>

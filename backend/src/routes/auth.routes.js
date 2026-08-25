@@ -1,6 +1,7 @@
 const express=require('express');
 const authRouter=express.Router();
 const authController=require('../controller/auth.controller')
+const authMiddleware=require('../middleware/auth.middleware.js')
 /**
  * @Routes post api/auth/register
  * @description new user registration
@@ -25,6 +26,6 @@ authRouter.get('/logout',authController.logoutUserController)
  * @description to get user detail
  * @access private
  */
-authRouter.get('/get-me',authController.getMeController);
+authRouter.get('/get-me',authMiddleware.authUser,authController.getMeController);
 
 module.exports=authRouter;
