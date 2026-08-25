@@ -2,6 +2,14 @@ const userModel=require('../models/user.model');
 const bcrypt=require('bcryptjs');
 const jwt=require('jsonwebtoken');
 const tokenBlacklistModel =require('../models/blacklist.model')
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: true,      // Required for HTTPS cross-site requests
+  sameSite: 'none'   // Required for cross-domain requests (localhost <-> Render)
+};
+
+
 /**
  * @name registerUserController
  * @description new user registration expects username,email,password in req.body
@@ -34,7 +42,7 @@ async function registerUserController(req,res){
       process.env.JWT_SECREAT,
       {expiresIn:"1d"}
     )
-    res.cookie("token",token);
+    res.cookie("token",token,cookieOptions);
     res.status(201).json({
       message:"user create succesfully",
       user:{
@@ -79,7 +87,7 @@ async function loginUsercontroller (req,res){
     process.env.JWT_SECREAT,
     {expiresIn:"1d"}
   )
-  res.cookie("token",token);
+  res.cookie("token",token,cookieOptions);
   res.status(200).json({
     message:"user loggedin succesfully",
     user:{
@@ -101,7 +109,7 @@ async function logoutUserController(req,res){
   if(token){
      await tokenBlacklistModel.create({token})
   }
-  res.clearCookie("token");
+  res.clearCookie("token",cookieOptions);
   res.status(201).json({
     message:"user loggedout succesfully"
   })
