@@ -12,9 +12,10 @@ function Register() {
 
   const handleSumbit=async (e)=>{
     e.preventDefault();
-    await handleRegister({username,email,password})
+    const res=await handleRegister({username,email,password})
+    if(res){
     navigate("/")
-  }
+  }}
 
   if(loading){
       return (

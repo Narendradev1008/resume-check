@@ -36,7 +36,7 @@ function Login() {
           <label>Password</label>
           <input onChange={(e)=>{setPassword(e.target.value)}} name="password" type="text" aria-label="enter your password" placeholder="enter your password"/>
         </div>
-          <button className='button primary-button' type="button">sumbit</button>
+          <button className='button primary-button' type="button submit">Sumbit</button>
         </form>
         <p>Don't have an account?
           <Link to={'/Register'}> Register</Link>
