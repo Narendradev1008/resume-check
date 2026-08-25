@@ -1,7 +1,7 @@
 import axios from 'axios';
 const api=axios.create({
-  baseURL:"https://resume-check-4qlt.onrender.com/",
-  withCredential:true
+  baseURL:"https://resume-check-4qlt.onrender.com",
+  withCredentials:true
 })
 export async function register({username,email,password}) {
 
@@ -30,7 +30,7 @@ export async function login({email,password}) {
 export async function logout() {
 
     try{
-      const response=await api.post('/api/auth/logout')
+      const response=await api.get('/api/auth/logout')
     return response.data;
     }
     catch(err){
@@ -40,7 +40,7 @@ export async function logout() {
 export async function getMe() {
 
     try{
-      const response=await api.post('/api/auth/get-me')
+      const response=await api.get('/api/auth/get-me')
     return response.data;
     }
     catch(err){
