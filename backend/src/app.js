@@ -4,9 +4,9 @@ const cors=require('cors');
 
 const app=express();
 app.use(express.json());
-app.use(cookieparser);
+app.use(cookieparser());
 app.use(cors({
-  origin:'https://resume-check-4qlt.onrender.com/',
+  origin:'https://resume-check-4qlt.onrender.com',
   credentials: true
 }))
 

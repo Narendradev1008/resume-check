@@ -6,6 +6,7 @@ const connectToDb=require('./src/config/database');
 
 connectToDb();
 app.use(express.json())
-app.listen(3000,()=>{
-  console.log("server is listning on port 3000");
+const PORT = process.env.PORT || 3000;
+app.listen(PORT,()=>{
+  console.log(`server is listning on port {PORT}`);
 })
