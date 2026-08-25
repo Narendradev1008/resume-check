@@ -1,5 +1,5 @@
 const jwt=require('jsonwebtoken');
-const tokenBlacklistModel=require('../middleware/auth.middleware')
+const tokenBlacklistModel=require('../models/blacklist.model')
 
 async function authUser(req,res,next){
   const token=req.cookies.token;
@@ -9,13 +9,15 @@ async function authUser(req,res,next){
     })
   }
   const isBlacklisted= await tokenBlacklistModel.findOne({token});
+
   if(isBlacklisted){
-    return res.status(201).json({
+    return res.status(401).json({
       message:"invalid token"
     })
   }
+
   try{
-  const decoded =jwt.verify("token",process.env.JWT_SECREAT);
+  const decoded =jwt.verify(token,process.env.JWT_SECREAT);
   req.user=decoded;
   next();
   }
