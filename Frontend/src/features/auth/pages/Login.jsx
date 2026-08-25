@@ -14,6 +14,7 @@ function Login() {
   const  handleSumbit=async (e)=>{
     e.preventDefault();
     await handleLogin({email,password});
+    navigate('/');
     }
   
 
