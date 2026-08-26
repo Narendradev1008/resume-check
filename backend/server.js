@@ -1,12 +1,20 @@
+require('dotenv').config();
 const app=require('./src/app');
 const express=require('express');
 
-require('dotenv').config();
+const invokeGeminiAi=require('./src/services/ai.services');
 const connectToDb=require('./src/config/database');
 
-connectToDb();
 app.use(express.json())
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT,()=>{
-  console.log(`server is listning on port {PORT}`);
-})
+  connectToDb();
+  
+  // Call the AI service safely
+  invokeGeminiAi();
+
+  app.listen(PORT, () => {
+    console.log(`Server is listening on port ${PORT}`);
+  });
+
+

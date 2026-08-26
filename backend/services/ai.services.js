@@ -1,1 +1,0 @@
-const GoogleGenAi=require('@google/genai')
