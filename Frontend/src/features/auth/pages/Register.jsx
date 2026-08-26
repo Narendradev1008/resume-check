@@ -13,10 +13,8 @@ function Register() {
   const handleSumbit=async (e)=>{
     e.preventDefault();
     const res=await handleRegister({username,email,password})
-    if(res){
     navigate("/")
-  }}
-
+  }
   if(loading){
       return (
         <main><h1>Loading....</h1></main>
