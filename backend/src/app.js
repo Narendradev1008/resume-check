@@ -15,9 +15,15 @@ app.use(cors({
 
 // require all routes here
 const authRouter=require('./routes/auth.routes');
+const interviewRouter=require('./routes/interview.routes');
+
+// all auth api routes here
+app.use('/api/auth',authRouter)
+app.use('/api/interview',interviewRouter)
+
+
 app.get('/',(req,res)=>{
   res.json({ message: 'Auth API endpoint is active' });
 });
-// all auth api routes here
-app.use('/api/auth',authRouter);
+;
 module.exports=app;
