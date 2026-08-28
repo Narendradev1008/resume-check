@@ -131,18 +131,11 @@ async function generatePdfFromHtml(htmlContent) {
 
 async function generateResumePdf({ resume, selfDescription, jobDescription }) {
 
-const resumePdfSchema = {
-    type: "OBJECT",
-    properties: {
-    html: {
-      type: "STRING",
-      description: "The HTML content of the resume which can be converted to PDF using any library like puppeteer",
-    },
-  },
-  required: ["html"],
-};
+    const resumePdfSchema = z.object({
+        html: z.string().describe("The HTML content of the resume which can be converted to PDF using any library like puppeteer")
+    })
 
-const prompt = `Generate resume for a candidate with the following details:
+    const prompt = `Generate resume for a candidate with the following details:
                         Resume: ${resume}
                         Self Description: ${selfDescription}
                         Job Description: ${jobDescription}
@@ -156,11 +149,11 @@ const prompt = `Generate resume for a candidate with the following details:
                     `
 
     const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.6-flash",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
-            responseSchema: resumePdfSchema,
+            responseSchema: zodToJsonSchema(resumePdfSchema),
         }
     })
 
