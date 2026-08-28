@@ -156,7 +156,7 @@ const prompt = `Generate resume for a candidate with the following details:
                     `
 
     const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-2.5-flash",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
