@@ -123,7 +123,7 @@ function Home() {
 </div>
 
 {/* Recent Reports List */}
- {reports.length > 0 && (
+ {/* {reports.length > 0 && (
     <section className='recent-reports'>
         <h2>My Recent Interview Plans</h2>
         <ul className='reports-list'>
@@ -136,7 +136,7 @@ function Home() {
             ))}
             </ul>
         </section>
-    )} 
+    )}  */}
 
     {/* Page Footer */}
     <footer className='page-footer'>
