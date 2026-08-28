@@ -17,6 +17,9 @@ $severity-low: #3fb950;
 *::-webkit-scrollbar {
     display: none;
 }
+*, *::before, *::after {
+    box-sizing: border-box;
+}
 
 // ── Page Shell ────────────────────────────────────────────────────────────────
 .interview-page {
@@ -40,7 +43,8 @@ $severity-low: #3fb950;
     background-color: $bg-card;
     border: 1px solid $border-color;
     border-radius: 1rem;
-    justify-content: space-between;
+    justify-content: flex-start;
+    overflow: hidden;
 }
 
 .interview-divider {
@@ -115,6 +119,7 @@ $severity-low: #3fb950;
     flex: 1;
     padding: 1.75rem 2rem;
     overflow-y: auto;
+    min-width: 0;
     min-height: initial;
     max-height: calc(100vh - 3rem);
     padding-bottom: 5rem;
@@ -361,6 +366,7 @@ $severity-low: #3fb950;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    box-sizing: border-box;
 }
 
 .sidebar-divider {

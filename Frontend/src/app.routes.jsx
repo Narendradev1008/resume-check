@@ -19,7 +19,7 @@ const router=createBrowserRouter([
     element:<Protected><Home/></Protected>
   },
   {
-    path:'/interview/:interviewid',
+    path:'/interview/:interviewId',
     element:<Protected><Interview/></Protected>
   }
 ])

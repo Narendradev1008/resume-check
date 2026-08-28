@@ -7,6 +7,7 @@ export const useInterview = () => {
 
     const {interviewId}=useParams();
      const context=useContext(InterviewContext);
+
      if (!context) {
         throw new Error("useInterview must be used within an InterviewProvider")
      }
@@ -29,18 +30,18 @@ export const useInterview = () => {
 
 
       const getReportById = async (interviewId) => {
-        let response=null;
         setLoading(true)
-        response = null
+        let response=null;
         try {
             response = await getInterviewReportById(interviewId)
             setReport(response.interviewReport)
+            return response.interviewReport
         } catch (error) {
             console.log(error)
         } finally {
             setLoading(false)
         }
-        return response.interviewReport
+        
     }
 
      
@@ -49,7 +50,7 @@ export const useInterview = () => {
         let response = null
         try {
             response = await getAllInterviewReports()
-            setReports(response.interviewReport)
+            setReports(response.interviewReports)
         } catch (error) {
             console.log(error)
         } finally {
@@ -59,15 +60,10 @@ export const useInterview = () => {
         return response.interviewReport
     }
 
-    useEffect(()=>{
-        if(interviewId){
-            getReportById(interviewId);
-        }
-        else{
-            getReports();
-        }
-    },[interviewId])
-        return { loading, report, reports, generateReport, getReportById, getReports}
+   
+
+    
+    return { loading, report, reports, generateReport, getReportById, getReports}
 
 
 }

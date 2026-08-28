@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState,useEffect, useRef } from 'react'
 import "../styles/home.scss"
 import { useNavigate } from 'react-router'
 import { useInterview } from '../hooks/useInterview.js'
@@ -6,12 +6,15 @@ import { useInterview } from '../hooks/useInterview.js'
 
 function Home() {
 
-    const { loading, generateReport,reports } = useInterview()
+    const { loading, generateReport,reports,getReports } = useInterview()
     const [ jobDescription, setJobDescription ] = useState("")
     const [ selfDescription, setSelfDescription ] = useState("")
     const resumeInputRef = useRef()
 
     const navigate = useNavigate()
+    useEffect(() => {
+        getReports()
+    }, [])
 
     const handleGenerateReport = async () => {
         const resumeFile = resumeInputRef.current.files[ 0 ]
@@ -123,7 +126,7 @@ function Home() {
 </div>
 
 {/* Recent Reports List */}
- {/* {reports.length > 0 && (
+  {reports.length > 0 && (
     <section className='recent-reports'>
         <h2>My Recent Interview Plans</h2>
         <ul className='reports-list'>
@@ -136,7 +139,7 @@ function Home() {
             ))}
             </ul>
         </section>
-    )}  */}
+    )}   
 
     {/* Page Footer */}
     <footer className='page-footer'>
