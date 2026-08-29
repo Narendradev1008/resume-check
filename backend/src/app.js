@@ -9,7 +9,10 @@ app.use(cookieparser());
 
 
 app.use(cors({
-  origin: 'https://resume-check-aun1pd2q6-narendradev1008s-projects.vercel.app', // Your local React / Vite frontend
+ origin: [
+    'https://resume-check-aun1pd2q6-narendradev1008s-projects.vercel.app',
+    'http://localhost:5173'
+  ], // Your local React / Vite frontend
   credentials: true
 }))
 
