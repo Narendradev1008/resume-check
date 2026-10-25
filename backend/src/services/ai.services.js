@@ -9,6 +9,34 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
 
+// Large PDFs can contain tens of thousands of characters of repeated or
+// irrelevant text. Keeping the useful inputs bounded makes generation much
+// faster and keeps requests predictable.
+const truncateText = (value, limit) => {
+  const text = String(value || "").replace(/\s+/g, " ").trim()
+  return text.length > limit ? `${text.slice(0, limit)}\n[Content truncated]` : text
+}
+
+const getInterviewGenerationConfig = () => {
+  const model = process.env.GOOGLE_GENAI_MODEL || "gemini-2.5-flash"
+  const config = {
+    responseMimeType: "application/json",
+    responseSchema: interviewReportSchema,
+    // The requested report fits comfortably within this limit. It prevents a
+    // long response from holding the HTTP request open unnecessarily.
+    maxOutputTokens: 4096,
+  }
+
+  // Gemini 2.5 Flash enables dynamic thinking by default. Interview-plan
+  // generation is a structured summarisation task, so disabling it here
+  // materially reduces latency without changing the response shape.
+  if (model.startsWith("gemini-2.5-flash")) {
+    config.thinkingConfig = { thinkingBudget: 0 }
+  }
+
+  return { model, config }
+}
+
 const interviewReportSchema = {
   type: "OBJECT",
   properties: {
@@ -89,20 +117,24 @@ const interviewReportSchema = {
 };
 
 async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
+    const prompt = `Generate a concise, practical interview report from the candidate and job details below.
 
+Return exactly 5 technical questions and exactly 3 behavioral questions. Each answer must be at most 60 words and directly useful in an interview. Return at most 5 skill gaps and a 5-day preparation plan with at most 3 short tasks per day. Infer a clear job title and match score.
 
-    const prompt = `Generate an interview report for a candidate with the following details:
-                        Resume: ${resume}
-                        Self Description: ${selfDescription}
-                        Job Description: ${jobDescription}
-`
+Candidate resume:
+${truncateText(resume, 18000)}
+
+Candidate self-description:
+${truncateText(selfDescription, 4000)}
+
+Target job description:
+${truncateText(jobDescription, 12000)}`
+
+    const { model, config } = getInterviewGenerationConfig()
     const response = await ai.models.generateContent({
-        model: process.env.GOOGLE_GENAI_MODEL,
+        model,
         contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: interviewReportSchema,
-        }
+        config,
     })
 
   return JSON.parse(response.text)

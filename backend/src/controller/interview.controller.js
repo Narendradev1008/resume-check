@@ -6,17 +6,21 @@ const interviewReportModel= require('../models/interviewReport.model')
  */
 async function generateInterViewReportController(req,res){
 
+  const startedAt = Date.now()
+
   if(!req.file) {
       return res.status(400).json({ message: "Resume PDF file is required." });
   }
 
 
    const resumeContent= await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
+   const pdfParsedAt = Date.now()
 
    const {selfDescription,jobDescription}=req.body
 
    const interviewReportByAi=await generateInterviewReport(
     {resume : resumeContent.text,selfDescription,jobDescription})
+    const aiCompletedAt = Date.now()
 
     const interviewReport=await interviewReportModel.create({
         user: req.user.id,
@@ -24,6 +28,13 @@ async function generateInterViewReportController(req,res){
         selfDescription,
         jobDescription,
         ...interviewReportByAi
+    })
+
+    console.info("Interview report timing (ms)", {
+      pdfParsing: pdfParsedAt - startedAt,
+      aiGeneration: aiCompletedAt - pdfParsedAt,
+      databaseSave: Date.now() - aiCompletedAt,
+      total: Date.now() - startedAt,
     })
 
     res.status(201).json({
