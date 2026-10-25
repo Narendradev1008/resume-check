@@ -22,13 +22,15 @@ function Home() {
         navigate(`/interview/${data._id}`)
     }
 
-    if (loading) {
-        return (
-            <main className='loading-screen'>
-                <h1>Loading your interview plan...</h1>
-            </main>
-        )
-    }
+   if (loading || !report) {
+    return (
+        <main className="loading-screen">
+            <div className="loading-spinner"></div>
+            <h1>Your interview report is being prepared</h1>
+            <p>This may take a few moments. Please wait...</p>
+        </main>
+    );
+}
   return (
     <div className='home-page'>
 
