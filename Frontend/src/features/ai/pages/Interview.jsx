@@ -71,13 +71,17 @@ const Interview = () => {
 
 
 
-    if (loading || !report) {
-        return (
-            <main className='loading-screen'>
-                <h1>Loading your interview plan...</h1>
-            </main>
-        )
-    }
+    
+if (loading || !report) {
+    return (
+        <main className="loading-screen">
+            <div className="loading-spinner"></div>
+            <h1>Your resume is being prepared</h1>
+            <p>This may take a few moments. Please wait...</p>
+        </main>
+    );
+}
+
    
     const scoreColor =
         report.matchScore >= 80 ? 'score--high' :
