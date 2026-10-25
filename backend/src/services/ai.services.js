@@ -18,7 +18,7 @@ const truncateText = (value, limit) => {
 }
 
 const getInterviewGenerationConfig = () => {
-  const model = process.env.GOOGLE_GENAI_MODEL || "gemini-2.5-flash"
+  const model = process.env.GOOGLE_GENAI_MODEL || "gemini-3.8-flash"
   const config = {
     responseMimeType: "application/json",
     responseSchema: interviewReportSchema,
@@ -32,6 +32,12 @@ const getInterviewGenerationConfig = () => {
   // materially reduces latency without changing the response shape.
   if (model.startsWith("gemini-2.5-flash")) {
     config.thinkingConfig = { thinkingBudget: 0 }
+  }
+
+  // Gemini 3 models use thinkingLevel instead of thinkingBudget. A low level
+  // is appropriate for this concise, structured report and minimizes latency.
+  if (model.startsWith("gemini-3")) {
+    config.thinkingConfig = { thinkingLevel: "low" }
   }
 
   return { model, config }
