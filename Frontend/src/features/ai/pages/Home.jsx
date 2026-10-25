@@ -22,7 +22,7 @@ function Home() {
         navigate(`/interview/${data._id}`)
     }
 
-   if (loading || !report) {
+   if (loading ) {
     return (
         <main className="loading-screen">
             <div className="loading-spinner"></div>
