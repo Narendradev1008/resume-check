@@ -17,7 +17,11 @@ function Register() {
   }
   if(loading){
       return (
-        <main><h1>Loading....</h1></main>
+       <main className="loading-screen">
+            <div className="loading-spinner"></div>
+            <h1>Your resume is being prepared</h1>
+            <p>This may take a few moments. Please wait...</p>
+        </main>
       )
     }
 
