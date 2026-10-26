@@ -1,6 +1,7 @@
 const pdfParse=require('pdf-parse');
 const {generateInterviewReport,generateResumePdf}=require('../services/ai.services');
 const interviewReportModel= require('../models/interviewReport.model')
+const { uploadResumePdf, createResumeDownloadUrl } = require('../services/resume-storage.service')
 /**
  * @description Controller to generate interview report based on user self description, resume and job description.
  */
@@ -101,23 +102,89 @@ async function generateResumePdfController(req, res) {
         })
     }
 
-    const { resume, jobDescription, selfDescription } = interviewReport
+    if (interviewReport.generatedResume?.status === "ready" && interviewReport.generatedResume.storageKey) {
+        return res.status(200).json({
+            message: "A resume has already been generated for this report.",
+            generatedResume: interviewReport.generatedResume,
+        })
+    }
+
+    if (interviewReport.generatedResume?.status === "generating") {
+        return res.status(409).json({
+            message: "Resume generation is already in progress.",
+        })
+    }
+
+    const claimedReport = await interviewReportModel.findOneAndUpdate({
+        _id: interviewReportId,
+        user: req.user.id,
+        "generatedResume.status": { $nin: ["generating", "ready"] },
+    }, {
+        $set: { "generatedResume.status": "generating" },
+        $unset: {
+            "generatedResume.storageKey": "",
+            "generatedResume.generatedAt": "",
+        },
+    }, { new: true })
+
+    if (!claimedReport) {
+        return res.status(409).json({ message: "Resume generation is already in progress." })
+    }
+
+    const { resume, jobDescription, selfDescription } = claimedReport
 
     try {
         const pdfBuffer = await generateResumePdf({ resume, jobDescription, selfDescription })
-        res.set({
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename=resume_${interviewReportId}.pdf`
+        const storageKey = await uploadResumePdf({
+            userId: req.user.id,
+            interviewReportId,
+            pdfBuffer,
         })
 
-        return res.send(pdfBuffer)
+        const generatedAt = new Date()
+        claimedReport.generatedResume = { storageKey, status: "ready", generatedAt }
+        await claimedReport.save()
+
+        return res.status(201).json({
+            message: "Resume generated and saved successfully.",
+            generatedResume: claimedReport.generatedResume,
+        })
     } catch (error) {
         console.error("Resume PDF generation failed:", error.message)
+        await interviewReportModel.updateOne({
+            _id: interviewReportId,
+            user: req.user.id,
+            "generatedResume.status": "generating",
+        }, { $set: { "generatedResume.status": "failed" } })
+
         return res.status(502).json({
             message: "Unable to generate the resume PDF at this time.",
         })
     }
 }
 
+async function getSavedResumePdfController(req, res) {
+    const { interviewReportId } = req.params
 
-module.exports={generateInterViewReportController,getInterviewReportByIdController,getAllInterviewReportsController,generateResumePdfController};
+    try {
+        const interviewReport = await interviewReportModel.findOne({
+            _id: interviewReportId,
+            user: req.user.id,
+        }).select("generatedResume")
+
+        if (!interviewReport?.generatedResume?.storageKey || interviewReport.generatedResume.status !== "ready") {
+            return res.status(404).json({ message: "Generated resume not found." })
+        }
+
+        const url = await createResumeDownloadUrl(interviewReport.generatedResume.storageKey, {
+            download: req.query.download === "true",
+        })
+        return res.status(200).json({ url, expiresInSeconds: 600 })
+    } catch (error) {
+        console.error("Resume preview URL generation failed:", error.message)
+        return res.status(502).json({ message: "Unable to retrieve the generated resume at this time." })
+    }
+}
+
+
+module.exports={generateInterViewReportController,getInterviewReportByIdController,getAllInterviewReportsController,generateResumePdfController,getSavedResumePdfController};

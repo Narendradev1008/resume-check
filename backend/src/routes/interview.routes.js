@@ -35,6 +35,13 @@ interviewRouter.get("/", authMiddleware.authUser, interviewController.getAllInte
  */
 interviewRouter.post("/resume/pdf/:interviewReportId", authMiddleware.authUser, interviewController.generateResumePdfController)
 
+/**
+ * @route GET /api/interview/resume/pdf/:interviewReportId
+ * @description retrieve a temporary private URL for a previously generated resume PDF.
+ * @access private
+ */
+interviewRouter.get("/resume/pdf/:interviewReportId", authMiddleware.authUser, interviewController.getSavedResumePdfController)
+
 
 
 

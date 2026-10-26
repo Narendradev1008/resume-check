@@ -28,5 +28,11 @@ app.use('/api/interview',interviewRouter)
 app.get('/',(req,res)=>{
   res.json({ message: 'Auth API endpoint is active' });
 });
-;
+
+// Lightweight endpoint for hosting health checks and external uptime monitors.
+// Keep this independent of MongoDB and AI providers so it can answer quickly.
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' })
+})
+
 module.exports=app;

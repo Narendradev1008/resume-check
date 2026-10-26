@@ -93,6 +93,21 @@ const preparationPlanSchema = new mongoose.Schema({
     } ]
 })
 
+const generatedResumeSchema = new mongoose.Schema({
+    storageKey: {
+        type: String,
+    },
+    status: {
+        type: String,
+        enum: [ "generating", "ready", "failed" ],
+    },
+    generatedAt: {
+        type: Date,
+    },
+}, {
+    _id: false,
+})
+
 const interviewReportSchema = new mongoose.Schema({
     jobDescription: {
         type: String,
@@ -113,6 +128,7 @@ const interviewReportSchema = new mongoose.Schema({
     behavioralQuestions: [ behavioralQuestionSchema ],
     skillGaps: [ skillGapSchema ],
     preparationPlan: [ preparationPlanSchema ],
+    generatedResume: generatedResumeSchema,
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users"
@@ -128,4 +144,4 @@ const interviewReportSchema = new mongoose.Schema({
 
 const interviewReportModel = mongoose.model("InterviewReport", interviewReportSchema);
 
-module.exports = interviewReportModel;  
+module.exports = interviewReportModel;
