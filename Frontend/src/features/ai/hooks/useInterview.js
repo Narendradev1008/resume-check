@@ -62,7 +62,12 @@ export const useInterview = () => {
      const getResumePdf = async (interviewReportId) => {
         setLoading(true)
         try {
-            await generateResumePdf({ interviewReportId })
+            const generationResponse = await generateResumePdf({ interviewReportId })
+            if (generationResponse.generatedResume) {
+                setReport((currentReport) => currentReport
+                    ? { ...currentReport, generatedResume: generationResponse.generatedResume }
+                    : currentReport)
+            }
             const response = await getSavedResumePdf({ interviewReportId })
             return response.url
         }
