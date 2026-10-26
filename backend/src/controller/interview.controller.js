@@ -5,21 +5,24 @@ const interviewReportModel= require('../models/interviewReport.model')
  * @description Controller to generate interview report based on user self description, resume and job description.
  */
 async function generateInterViewReportController(req,res){
-
-  const startedAt = Date.now()
-
-  if(!req.file) {
+  if (!req.file) {
       return res.status(400).json({ message: "Resume PDF file is required." });
   }
 
+  const { selfDescription, jobDescription } = req.body
+  if (!selfDescription || !jobDescription) {
+    return res.status(400).json({
+      message: "Self description and job description are required.",
+    })
+  }
 
-   const resumeContent= await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
-   const pdfParsedAt = Date.now()
+  try {
+    const startedAt = Date.now()
+    const resumeContent= await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
+    const pdfParsedAt = Date.now()
 
-   const {selfDescription,jobDescription}=req.body
-
-   const interviewReportByAi=await generateInterviewReport(
-    {resume : resumeContent.text,selfDescription,jobDescription})
+    const interviewReportByAi=await generateInterviewReport(
+      {resume : resumeContent.text,selfDescription,jobDescription})
     const aiCompletedAt = Date.now()
 
     const interviewReport=await interviewReportModel.create({
@@ -37,10 +40,16 @@ async function generateInterViewReportController(req,res){
       total: Date.now() - startedAt,
     })
 
-    res.status(201).json({
+    return res.status(201).json({
       message:"interview report genrated succesfully",
       interviewReport
     })
+  } catch (error) {
+    console.error("Interview report generation failed:", error.message)
+    return res.status(502).json({
+      message: "Unable to generate the interview report at this time.",
+    })
+  }
 }
 /**
  * @description Controller to get interview report by interviewId.
@@ -81,7 +90,10 @@ async function getAllInterviewReportsController(req,res){
 async function generateResumePdfController(req, res) {
     const { interviewReportId } = req.params
 
-    const interviewReport = await interviewReportModel.findById(interviewReportId)
+    const interviewReport = await interviewReportModel.findOne({
+        _id: interviewReportId,
+        user: req.user.id,
+    })
 
     if (!interviewReport) {
         return res.status(404).json({
@@ -91,14 +103,20 @@ async function generateResumePdfController(req, res) {
 
     const { resume, jobDescription, selfDescription } = interviewReport
 
-    const pdfBuffer = await generateResumePdf({ resume, jobDescription, selfDescription })
-    console.log("PDF controller hit:", req.params.interviewReportId)
-    res.set({
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=resume_${interviewReportId}.pdf`
-    })
+    try {
+        const pdfBuffer = await generateResumePdf({ resume, jobDescription, selfDescription })
+        res.set({
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename=resume_${interviewReportId}.pdf`
+        })
 
-    res.send(pdfBuffer)
+        return res.send(pdfBuffer)
+    } catch (error) {
+        console.error("Resume PDF generation failed:", error.message)
+        return res.status(502).json({
+            message: "Unable to generate the resume PDF at this time.",
+        })
+    }
 }
 
 
