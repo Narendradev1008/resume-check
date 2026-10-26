@@ -19,8 +19,6 @@ function Register() {
       return (
        <main className="loading-screen">
             <div className="loading-spinner"></div>
-            <h1>Your resume is being prepared</h1>
-            <p>This may take a few moments. Please wait...</p>
         </main>
       )
     }
@@ -28,30 +26,31 @@ function Register() {
  
 
   return (
-    <main>
-      <div className="form-containor">
-      <h1>Register
-      </h1>
+    <main className="auth-page">
+      <div className="auth-card">
+      <p className="auth-card__eyebrow">ResumeCheck</p>
+      <h1>Create your account</h1>
+      <p className="auth-card__subtitle">Save interview reports and generate tailored resumes for your applications.</p>
         <form onSubmit={handleSumbit}>
           <div className="input-group">
-          <label>Username</label>
-          <input onChange={(e)=>{setUsername(e.target.value)}}
-          name="username" type="text" aria-label="enter your username" placeholder="enter username"/>
+          <label htmlFor="username">Username</label>
+          <input id="username" value={username} onChange={(e)=>{setUsername(e.target.value)}}
+          name="username" type="text" autoComplete="username" placeholder="Choose a username" required />
         </div>
         <div className="input-group">
-          <label>Email</label>
-          <input  onChange={(e)=>{setEmail(e.target.value)}}
-          name="email" type="text" aria-label="enter your email" placeholder="enter email"/>
+          <label htmlFor="email">Email</label>
+          <input id="email" value={email} onChange={(e)=>{setEmail(e.target.value)}}
+          name="email" type="email" autoComplete="email" placeholder="you@example.com" required />
         </div>
         <div className="input-group">
-          <label>Password</label>
-          <input onChange={(e)=>{setPasssword(e.target.value)}} 
-          name="password" type="text" aria-label="enter your password" placeholder="enter your password"/>
+          <label htmlFor="password">Password</label>
+          <input id="password" value={password} onChange={(e)=>{setPasssword(e.target.value)}}
+          name="password" type="password" autoComplete="new-password" placeholder="Create a password" required />
         </div>
-          <button className='button primary-button' type="button sumbit">sumbit</button>
+          <button className='auth-card__submit' type="submit">Create account</button>
         </form>
-        <p> have an account?
-          <Link to={"/login"}> Login</Link>
+        <p className="auth-card__switch">Already have an account?
+          <Link to={"/login"}> Sign in</Link>
         </p>
         </div>
     </main>
