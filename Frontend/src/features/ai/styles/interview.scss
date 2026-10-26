@@ -114,6 +114,23 @@ $severity-low: #3fb950;
     }
 }
 
+.interview-nav .logout-button {
+    width: 100%;
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid $border-color;
+    border-radius: 0.5rem;
+    color: $text-primary;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+        border-color: $accent;
+        color: $accent;
+    }
+}
+
 // ── Center Content ────────────────────────────────────────────────────────────
 .interview-content {
     flex: 1;

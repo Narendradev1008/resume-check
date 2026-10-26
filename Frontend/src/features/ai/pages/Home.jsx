@@ -3,6 +3,7 @@ import "../styles/home.scss"
 import { useNavigate } from 'react-router'
 import { useInterview } from '../hooks/useInterview.js'
 import GenerationProgress from '../components/GenerationProgress.jsx'
+import { useAuth } from '../../auth/hooks/useAuth.js'
 
 const REPORT_GENERATION_STEPS = [
     { at: 0, label: "Uploading your details" },
@@ -16,6 +17,7 @@ const REPORT_GENERATION_STEPS = [
 function Home() {
 
     const { loading, generateReport,reports,getReports } = useInterview()
+    const { user, handleLogout } = useAuth()
     const [ jobDescription, setJobDescription ] = useState("")
     const [ selfDescription, setSelfDescription ] = useState("")
     const [ isGeneratingReport, setIsGeneratingReport ] = useState(false)
@@ -37,6 +39,11 @@ function Home() {
         }
     }
 
+    const logoutUser = async () => {
+        await handleLogout()
+        navigate('/login')
+    }
+
    if (loading ) {
     if (isGeneratingReport) {
         return <GenerationProgress title="Your interview report is being prepared" steps={REPORT_GENERATION_STEPS} />
@@ -50,6 +57,11 @@ function Home() {
 }
   return (
     <div className='home-page'>
+
+<div className="home-page__topbar">
+    <span>Signed in as {user?.username || user?.name || "User"}</span>
+    <button type="button" className="logout-button" onClick={logoutUser}>Logout</button>
+</div>
 
 {/* Page Header */}
 <header className='page-header'>
