@@ -61,18 +61,12 @@ export const useInterview = () => {
     }
      const getResumePdf = async (interviewReportId) => {
         setLoading(true)
-        let response = null
         try {
-            response = await generateResumePdf({ interviewReportId })
-            const url = window.URL.createObjectURL(new Blob([ response ], { type: "application/pdf" }))
-            const link = document.createElement("a")
-            link.href = url
-            link.setAttribute("download", `resume_${interviewReportId}.pdf`)
-            document.body.appendChild(link)
-            link.click()
+            return await generateResumePdf({ interviewReportId })
         }
         catch (error) {
             console.log(error)
+            throw error
         } finally {
             setLoading(false)
         }

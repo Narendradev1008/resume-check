@@ -2,6 +2,15 @@ import React, { useState,useEffect, useRef } from 'react'
 import "../styles/home.scss"
 import { useNavigate } from 'react-router'
 import { useInterview } from '../hooks/useInterview.js'
+import GenerationProgress from '../components/GenerationProgress.jsx'
+
+const REPORT_GENERATION_STEPS = [
+    { at: 0, label: "Uploading your details" },
+    { at: 25, label: "Reading your resume and job description" },
+    { at: 50, label: "AI is analysing your profile" },
+    { at: 72, label: "Creating interview questions and preparation plan" },
+    { at: 86, label: "Saving your interview report" },
+]
 
 
 function Home() {
@@ -9,6 +18,7 @@ function Home() {
     const { loading, generateReport,reports,getReports } = useInterview()
     const [ jobDescription, setJobDescription ] = useState("")
     const [ selfDescription, setSelfDescription ] = useState("")
+    const [ isGeneratingReport, setIsGeneratingReport ] = useState(false)
     const resumeInputRef = useRef()
 
     const navigate = useNavigate()
@@ -17,17 +27,24 @@ function Home() {
     }, [])
 
     const handleGenerateReport = async () => {
-        const resumeFile = resumeInputRef.current.files[ 0 ]
-        const data = await generateReport({ jobDescription, selfDescription, resumeFile })
-        navigate(`/interview/${data._id}`)
+        setIsGeneratingReport(true)
+        try {
+            const resumeFile = resumeInputRef.current.files[ 0 ]
+            const data = await generateReport({ jobDescription, selfDescription, resumeFile })
+            navigate(`/interview/${data._id}`)
+        } finally {
+            setIsGeneratingReport(false)
+        }
     }
 
    if (loading ) {
+    if (isGeneratingReport) {
+        return <GenerationProgress title="Your interview report is being prepared" steps={REPORT_GENERATION_STEPS} />
+    }
+
     return (
         <main className="loading-screen">
             <div className="loading-spinner"></div>
-            <h1>Your interview report is being prepared</h1>
-            <p>This may take a few moments. Please wait...</p>
         </main>
     );
 }
