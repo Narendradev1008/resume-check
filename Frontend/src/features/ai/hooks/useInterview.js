@@ -89,10 +89,15 @@ export const useInterview = () => {
         const response = await getSavedResumePdf({ interviewReportId, download: true })
         return response.url
     }
+
+    const getResumePreviewUrl = async (interviewReportId) => {
+        const response = await getSavedResumePdf({ interviewReportId })
+        return response.url
+    }
    
 
     
-    return { loading, report, reports, generateReport, getReportById, getReports, removeReport, getResumePdf, getResumeDownloadUrl }
+    return { loading, report, reports, generateReport, getReportById, getReports, removeReport, getResumePdf, getResumePreviewUrl, getResumeDownloadUrl }
 
 
 }

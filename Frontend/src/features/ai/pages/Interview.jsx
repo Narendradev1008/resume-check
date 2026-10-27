@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import '../styles/interview.scss'
 import '../styles/resume-preview.scss'
 import { useInterview } from '../hooks/useInterview.js'
@@ -6,259 +6,111 @@ import { useNavigate, useParams } from 'react-router'
 import GenerationProgress from '../components/GenerationProgress.jsx'
 import { useAuth } from '../../auth/hooks/useAuth.js'
 
+const icon = { dashboard: '⌂', practice: '◉', questions: '▤', roadmap: '♧', resources: '▱', settings: '⚙', calendar: '□', arrow: '›', code: '</>', people: '♙', file: '▤', check: '✓', database: '▱' }
+const STEPS = [{ at: 0, label: 'Preparing your profile' }, { at: 25, label: 'AI is tailoring your resume' }, { at: 55, label: 'Formatting your resume for ATS' }, { at: 75, label: 'Creating your PDF' }]
 
-
-const NAV_ITEMS = [
-    { id: 'technical', label: 'Technical Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>) },
-    { id: 'behavioral', label: 'Behavioral Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>) },
-    { id: 'roadmap', label: 'Road Map', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>) },
-]
-
-const RESUME_GENERATION_STEPS = [
-    { at: 0, label: "Preparing your profile" },
-    { at: 25, label: "AI is tailoring your resume" },
-    { at: 55, label: "Formatting your resume for ATS" },
-    { at: 75, label: "Creating your PDF" },
-    { at: 86, label: "Preparing your download" },
-]
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-const QuestionCard = ({ item, index }) => {
-    const [ open, setOpen ] = useState(false)
-    return (
-        <div className='q-card'>
-            <div className='q-card__header' onClick={() => setOpen(o => !o)}>
-                <span className='q-card__index'>Q{index + 1}</span>
-                <p className='q-card__question'>{item.question}</p>
-                <span className={`q-card__chevron ${open ? 'q-card__chevron--open' : ''}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-                </span>
-            </div>
-            {open && (
-                <div className='q-card__body'>
-                    <div className='q-card__section'>
-                        <span className='q-card__tag q-card__tag--intention'>Intention</span>
-                        <p>{item.intention}</p>
-                    </div>
-                    <div className='q-card__section'>
-                        <span className='q-card__tag q-card__tag--answer'>Model Answer</span>
-                        <p>{item.answer}</p>
-                    </div>
-                </div>
-            )}
-        </div>
-    )
+const getIcon = (label = '') => {
+    const value = label.toLowerCase()
+    if (value.includes('behav')) return icon.people
+    if (value.includes('system')) return icon.database
+    if (value.includes('coding') || value.includes('algorithm')) return icon.code
+    return icon.check
 }
 
-const RoadMapDay = ({ day }) => (
-    <div className='roadmap-day'>
-        <div className='roadmap-day__header'>
-            <span className='roadmap-day__badge'>Day {day.day}</span>
-            <h3 className='roadmap-day__focus'>{day.focus}</h3>
-        </div>
-        <ul className='roadmap-day__tasks'>
-            {day.tasks.map((task, i) => (
-                <li key={i}>
-                    <span className='roadmap-day__bullet' />
-                    {task}
-                </li>
-            ))}
-        </ul>
+function QuestionModal({ title, questions, onClose }) {
+    const [openIndex, setOpenIndex] = useState(0)
+    return <div className='report-modal' role='presentation' onMouseDown={onClose}>
+        <section className='report-modal__content' role='dialog' aria-modal='true' aria-labelledby='question-title' onMouseDown={(e) => e.stopPropagation()}>
+            <header><div><p className='dashboard__eyebrow'>Practice library</p><h2 id='question-title'>{title}</h2></div><button onClick={onClose} aria-label='Close questions'>×</button></header>
+            <div className='question-list'>
+                {questions.length ? questions.map((item, index) => <article className='dashboard-question' key={index}>
+                    <button onClick={() => setOpenIndex(openIndex === index ? -1 : index)}><span>{String(index + 1).padStart(2, '0')}</span><strong>{item.question}</strong><b>{openIndex === index ? '−' : '+'}</b></button>
+                    {openIndex === index && <div><p><strong>What they are looking for</strong>{item.intention}</p><p><strong>A strong answer</strong>{item.answer}</p></div>}
+                </article>) : <p className='empty-state'>Your question set will appear here once it is ready.</p>}
+            </div>
+        </section>
     </div>
-)
+}
 
-// ── Main Component ────────────────────────────────────────────────────────────
-const Interview = () => {
-    const [ activeNav, setActiveNav ] = useState('technical')
-    const [ isDownloadingResume, setIsDownloadingResume ] = useState(false)
-    const [ resumePdfUrl, setResumePdfUrl ] = useState(null)
-    const { report, getReportById, loading, getResumePdf, getResumeDownloadUrl } = useInterview()
+function PlanModal({ roadmap, onClose }) {
+    return <div className='report-modal' role='presentation' onMouseDown={onClose}>
+        <section className='report-modal__content plan-modal' role='dialog' aria-modal='true' aria-labelledby='plan-title' onMouseDown={(e) => e.stopPropagation()}>
+            <header><div><p className='dashboard__eyebrow'>Your personalized schedule</p><h2 id='plan-title'>Preparation Plan</h2></div><button onClick={onClose} aria-label='Close preparation plan'>×</button></header>
+            <div className='plan-list'>{roadmap.map((day) => <article key={day.day}><span>Day {day.day}</span><div><h3>{day.focus}</h3><ul>{day.tasks?.map((task, index) => <li key={index}>{task}</li>)}</ul></div></article>)}</div>
+        </section>
+    </div>
+}
+
+function Interview() {
+    const [activeNav, setActiveNav] = useState('dashboard')
+    const [questionGroup, setQuestionGroup] = useState(null)
+    const [isPlanOpen, setIsPlanOpen] = useState(false)
+    const [isDownloadingResume, setIsDownloadingResume] = useState(false)
+    const [resumePdfUrl, setResumePdfUrl] = useState(null)
+    const [resumeError, setResumeError] = useState('')
+    const { report, getReportById, loading, getResumePdf, getResumePreviewUrl, getResumeDownloadUrl } = useInterview()
     const { handleLogout } = useAuth()
     const { interviewId } = useParams()
     const navigate = useNavigate()
-    console.log(interviewId)
-    useEffect(() => {
-        if (interviewId) {
-            getReportById(interviewId)
-        }
-        
-    }, [ interviewId ])
 
-    const handleResumeDownload = async () => {
+    useEffect(() => { if (interviewId) getReportById(interviewId) }, [interviewId])
+    const allQuestions = useMemo(() => [...(report?.technicalQuestions || []), ...(report?.behavioralQuestions || [])], [report])
+    if (isDownloadingResume) return <GenerationProgress title='Your resume is being prepared' steps={STEPS} />
+    if (loading || !report) return <main className='loading-screen'><div className='loading-spinner' /></main>
+
+    const score = report.matchScore || 0
+    const roadmap = report.preparationPlan || []
+    const gaps = report.skillGaps || []
+    const navItems = [['dashboard', 'Dashboard'], ['practice', 'Practice'], ['questions', 'Questions'], ['roadmap', 'Roadmap'], ['resources', 'Resources']]
+    const areas = gaps.slice(0, 5).map((gap) => gap.skill)
+    const categories = [
+        { name: 'Technical', caption: `${report.technicalQuestions?.length || 0} questions`, symbol: icon.database, questions: report.technicalQuestions || [] },
+        { name: 'Behavioral', caption: `${report.behavioralQuestions?.length || 0} questions`, symbol: icon.people, questions: report.behavioralQuestions || [] },
+        { name: 'Preparation plan', caption: `${roadmap.length} focused days`, symbol: icon.file, questions: allQuestions },
+    ]
+    const jumpTo = (id) => { setActiveNav(id); document.getElementById(id === 'dashboard' ? 'overview' : id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
+    const hasSavedResume = report.generatedResume?.status === 'ready'
+    const viewResume = async () => {
+        setResumeError('')
         setIsDownloadingResume(true)
         try {
-            const pdfUrl = await getResumePdf(interviewId)
-            setResumePdfUrl(pdfUrl)
+            const url = hasSavedResume
+                ? await getResumePreviewUrl(interviewId)
+                : await getResumePdf(interviewId)
+            setResumePdfUrl(url)
+        } catch (error) {
+            setResumeError(error.response?.data?.message || 'We could not generate your resume right now. Please try again.')
         } finally {
             setIsDownloadingResume(false)
         }
     }
+    const downloadResume = async () => { const url = await getResumeDownloadUrl(interviewId); const link = document.createElement('a'); link.href = url; link.download = `resume_${interviewId}.pdf`; link.click() }
 
-    const closeResumePreview = () => setResumePdfUrl(null)
-
-    const downloadResumePdf = async () => {
-        const downloadUrl = await getResumeDownloadUrl(interviewId)
-        const link = document.createElement("a")
-        link.href = downloadUrl
-        link.download = `resume_${interviewId}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-    }
-
-    const logoutUser = async () => {
-        await handleLogout()
-        navigate('/login')
-    }
-
-if (isDownloadingResume) {
-    return <GenerationProgress title="Your resume is being prepared" steps={RESUME_GENERATION_STEPS} />
-}
-
-if (loading || !report) {
-    return (
-        <main className="loading-screen">
-            <div className="loading-spinner"></div>
-        </main>
-    );
-}
-
-   
-    const scoreColor =
-        report.matchScore >= 80 ? 'score--high' :
-            report.matchScore >= 60 ? 'score--mid' : 'score--low'
-    const scoreLabel =
-    report.matchScore >= 80 ? 'Strong match for this role' :
-    report.matchScore >= 60 ? 'Moderate match for this role' : 'Weak match for this role'        
-    const hasSavedResume = report.generatedResume?.status === "ready"
-
-
-    return (
-        <div className='interview-page'>
-            <div className='interview-layout'>
-
-                {/* ── Left Nav ── */}
-                <nav className='interview-nav'>
-                    <div className="nav-content">
-                        <p className='interview-nav__label'>Sections</p>
-                        {NAV_ITEMS.map(item => (
-                            <button
-                                key={item.id}
-                                className={`interview-nav__item ${activeNav === item.id ? 'interview-nav__item--active' : ''}`}
-                                onClick={() => setActiveNav(item.id)}
-                            >
-                                <span className='interview-nav__icon'>{item.icon}</span>
-                                {item.label}
-                            </button>
-                        ))}
-                    </div>
-                    <button
-                        onClick={handleResumeDownload}
-                        className='button primary-button' >
-                        <svg height={"0.8rem"} style={{ marginRight: "0.8rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.6144 17.7956 11.492 15.7854C12.2731 13.9966 13.6789 12.5726 15.4325 11.7942L17.8482 10.7219C18.6162 10.381 18.6162 9.26368 17.8482 8.92277L15.5079 7.88394C13.7092 7.08552 12.2782 5.60881 11.5105 3.75894L10.6215 1.61673C10.2916.821765 9.19319.821767 8.8633 1.61673L7.97427 3.75892C7.20657 5.60881 5.77553 7.08552 3.97685 7.88394L1.63658 8.92277C.868537 9.26368.868536 10.381 1.63658 10.7219L4.0523 11.7942C5.80589 12.5726 7.21171 13.9966 7.99275 15.7854L8.8704 17.7956C9.20776 18.5682 10.277 18.5682 10.6144 17.7956ZM19.4014 22.6899 19.6482 22.1242C20.0882 21.1156 20.8807 20.3125 21.8695 19.8732L22.6299 19.5353C23.0412 19.3526 23.0412 18.7549 22.6299 18.5722L21.9121 18.2532C20.8978 17.8026 20.0911 16.9698 19.6586 15.9269L19.4052 15.3156C19.2285 14.8896 18.6395 14.8896 18.4628 15.3156L18.2094 15.9269C17.777 16.9698 16.9703 17.8026 15.956 18.2532L15.2381 18.5722C14.8269 18.7549 14.8269 19.3526 15.2381 19.5353L15.9985 19.8732C16.9874 20.3125 17.7798 21.1156 18.2198 22.1242L18.4667 22.6899C18.6473 23.104 19.2207 23.104 19.4014 22.6899Z"></path></svg>
-                        {hasSavedResume ? "View Saved Resume" : "Generate Resume PDF"}
-                    </button>
-                    <button type="button" className="logout-button" onClick={logoutUser}>Logout</button>
-                </nav>
-
-                <div className='interview-divider' />
-
-                {/* ── Center Content ── */}
-                <main className='interview-content'>
-                    {activeNav === 'technical' && (
-                        <section>
-                            <div className='content-header'>
-                                <h2>Technical Questions</h2>
-                                <span className='content-header__count'>{report.technicalQuestions.length} questions</span>
-                            </div>
-                            <div className='q-list'>
-                                {report.technicalQuestions.map((q, i) => (
-                                    <QuestionCard key={i} item={q} index={i} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {activeNav === 'behavioral' && (
-                        <section>
-                            <div className='content-header'>
-                                <h2>Behavioral Questions</h2>
-                                <span className='content-header__count'>{report.behavioralQuestions.length} questions</span>
-                            </div>
-                            <div className='q-list'>
-                                {report.behavioralQuestions.map((q, i) => (
-                                    <QuestionCard key={i} item={q} index={i} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {activeNav === 'roadmap' && (
-                        <section>
-                            <div className='content-header'>
-                                <h2>Preparation Road Map</h2>
-                                <span className='content-header__count'>{report.preparationPlan.length}-day plan</span>
-                            </div>
-                            <div className='roadmap-list'>
-                                {report.preparationPlan.map((day) => (
-                                    <RoadMapDay key={day.day} day={day} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-                </main>
-
-                <div className='interview-divider' />
-
-                {/* ── Right Sidebar ── */}
-                <aside className='interview-sidebar'>
-
-                    {/* Match Score */}
-                    <div className='match-score'>
-                        <p className='match-score__label'>Match Score</p>
-                        <div className={`match-score__ring ${scoreColor}`}>
-                            <span className='match-score__value'>{report.matchScore}</span>
-                            <span className='match-score__pct'>%</span>
-                        </div>
-                        <p className={`match-score__sub ${scoreColor}`}>{scoreLabel}</p>
-                    </div>
-
-                    <div className='sidebar-divider' />
-
-                    {/* Skill Gaps */}
-                    <div className='skill-gaps'>
-                        <p className='skill-gaps__label'>Skill Gaps</p>
-                        <div className='skill-gaps__list'>
-                            {report.skillGaps.map((gap, i) => (
-                                <span key={i} className={`skill-tag skill-tag--${gap.severity}`}>
-                                    {gap.skill}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-
-                </aside>
-            </div>
-            {resumePdfUrl && (
-                <div className="resume-preview" role="dialog" aria-modal="true" aria-label="Generated resume preview">
-                    <div className="resume-preview__dialog">
-                        <header className="resume-preview__header">
-                            <div>
-                                <h2>Your generated resume</h2>
-                                <p>Review it before downloading.</p>
-                            </div>
-                            <button type="button" className="resume-preview__close" onClick={closeResumePreview} aria-label="Close resume preview">×</button>
-                        </header>
-                        <iframe className="resume-preview__document" src={resumePdfUrl} title="Generated resume PDF" />
-                        <footer className="resume-preview__footer">
-                            <button type="button" className="button" onClick={closeResumePreview}>Close</button>
-                            <button type="button" className="button primary-button" onClick={downloadResumePdf}>Download PDF</button>
-                        </footer>
-                    </div>
-                </div>
-            )}
-        </div>
-    )
+    return <main className='interview-dashboard'>
+        <aside className='dashboard-sidebar'>
+            <button className='brand' onClick={() => jumpTo('dashboard')}><i>✦</i><span>prepwise</span></button>
+            <nav>{navItems.map(([id, label]) => <button key={id} onClick={() => jumpTo(id)} className={activeNav === id ? 'active' : ''}><b>{icon[id]}</b><span>{label}</span></button>)}</nav>
+            <div className='dashboard-sidebar__bottom'><button onClick={() => setActiveNav('settings')}><b>{icon.settings}</b><span>Settings</span></button><button onClick={async () => { await handleLogout(); navigate('/login') }}><b>↪</b><span>Logout</span></button></div>
+        </aside>
+        <section className='dashboard-main'>
+            <header className='dashboard-topbar'><div><p className='dashboard__eyebrow'>Your interview workspace</p><h1>Interview Report</h1></div><div className='topbar-actions'><button className='plan-button' onClick={() => setIsPlanOpen(true)}><span>{icon.calendar}</span> View Preparation Plan <em>{icon.arrow}</em></button></div></header>
+            <section id='overview' className='overview-card dashboard-card'>
+                <div className='score-column'><div className='score-ring' style={{ '--score': `${score * 3.6}deg` }}><div><strong>{score}%</strong><span>Match Score</span></div></div></div>
+                <div className='role-summary'><p className='dashboard__eyebrow'>Target role</p><h2>{report.title || 'Your target role'}</h2><div className='skill-pills'>{areas.length ? areas.map((area) => <span key={area}>{area}</span>) : <span>Interview preparation</span>}</div><div className='role-summary__actions'><button className='resume-button' onClick={viewResume}>{hasSavedResume ? 'View resume' : 'Generate tailored resume'} <span>↗</span></button><button className='text-action' onClick={() => navigate('/')}>← Back to plans</button></div>{resumeError && <p className='resume-error' role='alert'>{resumeError}</p>}</div>
+            </section>
+            <section id='roadmap' className='roadmap-section dashboard-card'><header><h2>{roadmap.length || 7} Day Preparation Roadmap</h2><button className='text-action' onClick={() => setIsPlanOpen(true)}>View Plan {icon.arrow}</button></header><div className='roadmap-track'>
+                {roadmap.length ? roadmap.map((day, index) => <article className={`roadmap-item ${index === 0 ? 'roadmap-item--active' : ''}`} key={day.day}><span>Day {day.day}</span><div className='roadmap-icon'>{getIcon(day.focus)}</div><h3>{day.focus}</h3><p>{day.tasks?.[0] || 'Build confidence'}</p><div className='roadmap-progress'><i style={{ width: `${index === 0 ? 100 : Math.max(12, 78 - index * 15)}%` }} /></div></article>) : <p className='empty-state'>Your personalized roadmap will be ready here shortly.</p>}
+            </div></section>
+            <section className='dashboard-grid'>
+                <article className='dashboard-card skill-analysis'><header><h2>Skill Analysis</h2><button className='text-action' onClick={() => jumpTo('questions')}>View Details {icon.arrow}</button></header><div className='radar-wrap'><div className='radar'><i /><i /><i /><i /><i /><div className='radar-shape' /><div className='radar-label radar-label--top'>Technical</div><div className='radar-label radar-label--right'>Problem solving</div><div className='radar-label radar-label--bottom'>Communication</div><div className='radar-label radar-label--left'>Behavioral</div></div><div className='legend'><span><i className='pink-dot' /> You</span><span><i /> Target</span></div></div></article>
+                <article id='practice' className='dashboard-card progress-card'><header><h2>Practice Progress</h2><button className='select-button'>Last 7 Days <span>⌄</span></button></header><div className='chart'><div className='chart-lines'>{[40, 30, 20, 10, 0].map((v) => <span key={v}>{v}</span>)}</div><div className='bars'>{[35, 52, 62, 82, 68, 78, 94].map((v, index) => <div key={index}><i style={{ height: `${Math.max(v - 34, 12)}%` }} /><b style={{ height: `${Math.min(v, 72)}%` }} /><span>{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index]}</span></div>)}</div></div><footer><span><i className='pink-dot' /> Questions attempted</span><span><i /> Correct answers</span></footer></article>
+                <article id='questions' className='dashboard-card question-categories'><header><h2>Top Interview Questions</h2><button className='text-action' onClick={() => setQuestionGroup({ title: 'All interview questions', questions: allQuestions })}>View All {icon.arrow}</button></header>{categories.map((category) => <button key={category.name} onClick={() => setQuestionGroup({ title: category.name, questions: category.questions })}><i>{category.symbol}</i><span><strong>{category.name}</strong><small>{category.caption}</small></span><b>{icon.arrow}</b></button>)}</article>
+            </section>
+        </section>
+        {questionGroup && <QuestionModal {...questionGroup} onClose={() => setQuestionGroup(null)} />}
+        {isPlanOpen && <PlanModal roadmap={roadmap} onClose={() => setIsPlanOpen(false)} />}
+        {resumePdfUrl && <div className='resume-preview' role='dialog' aria-modal='true' aria-label='Generated resume preview'><div className='resume-preview__dialog'><header className='resume-preview__header'><div><h2>Your generated resume</h2><p>Review it before downloading.</p></div><button className='resume-preview__close' onClick={() => setResumePdfUrl(null)} aria-label='Close'>×</button></header><iframe className='resume-preview__document' src={resumePdfUrl} title='Generated resume PDF' /><footer className='resume-preview__footer'><button className='button' onClick={() => setResumePdfUrl(null)}>Close</button><button className='button primary-button' onClick={downloadResume}>Download PDF</button></footer></div></div>}
+    </main>
 }
 
 export default Interview
