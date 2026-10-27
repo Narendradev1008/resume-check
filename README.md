@@ -1,139 +1,114 @@
-# ResumeCheck API - DeepSeek setup and flow
+# Prepwise
 
-The two AI features are ready to use after the backend has a valid DeepSeek API key, a working MongoDB connection, and a logged-in user cookie.
+Prepwise is an AI-powered interview preparation platform. It compares a candidate profile with a target job description and creates interview reports, skill-gap insights, questions, preparation plans, and tailored resume PDFs.
 
-## 1. Required configuration
+## Features
 
-Create or update `backend/.env`. Never commit this file or put the real API key in frontend code.
+- Secure account registration and login with HTTP-only JWT cookies
+- Resume PDF upload or self-description based candidate profile
+- AI-generated match score, skill gaps, and role evaluation
+- Technical and behavioral interview questions with answer guidance
+- Personalized preparation plan and tailored resume PDF generation
+- Private PDF storage, preview, and download through AWS S3
+- Responsive React dashboard
 
-```env
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECREAT=your_jwt_secret
-DEEPSEEK_API_KEY=your_deepseek_api_key
-DEEPSEEK_MODEL=deepseek-flash
-PORT=3000
-```
+## Tech Stack
 
-`DEEPSEEK_MODEL` is optional. If it is absent, the backend uses `deepseek-flash`.
+| Area | Technology |
+| --- | --- |
+| Frontend | React, Vite, React Router, Sass, Axios |
+| Backend | Node.js, Express, MongoDB, Mongoose |
+| Authentication | JWT, HTTP-only cookies, bcrypt |
+| AI | DeepSeek Chat Completions API |
+| File handling | Multer, pdf-parse, Puppeteer |
+| PDF storage | AWS S3 and pre-signed URLs |
 
-The old `GOOGLE_GENAI_API_KEY` and `GOOGLE_GENAI_MODEL` values are no longer used by the AI service and can be removed from `.env`.
+## Local Setup
 
-Run the backend:
+### Prerequisites
 
-```bash
-cd backend
-npm install
-npm run dev
-```
+- Node.js 18 or newer
+- MongoDB connection string
+- DeepSeek API key
+- AWS S3 bucket and credentials for tailored-resume PDFs
 
-Node.js 18 or later is required because the DeepSeek integration uses Node's built-in `fetch`. This project was verified with Node 24.
+### Backend
 
-## 2. Authentication requirement
+Create `backend/.env` with these values:
 
-Both APIs are private. First sign in through the existing auth API so the browser receives the `token` cookie. Send requests with credentials enabled:
+    MONGODB_URI=your_mongodb_connection_string
+    JWT_SECREAT=your_long_random_jwt_secret
+    DEEPSEEK_API_KEY=your_deepseek_api_key
+    DEEPSEEK_MODEL=deepseek-flash
+    PORT=3000
+    AWS_REGION=your_aws_region
+    AWS_S3_BUCKET=your_private_s3_bucket
+    AWS_ACCESS_KEY_ID=your_aws_access_key_id
+    AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
 
-```js
-fetch("http://localhost:3000/api/interview", {
-  credentials: "include",
-  // ...
-})
-```
+`JWT_SECREAT` is intentionally spelled this way because it matches the existing application configuration.
 
-The current backend checks the `token` cookie, not an `Authorization: Bearer ...` header.
+Install and start the API:
 
-## 3. API: generate and save an interview report
+    cd backend
+    npm install
+    npm run dev
 
-`POST /api/interview`
+The API runs at `http://localhost:3000`.
 
-Send `multipart/form-data` with these fields:
+### Frontend
 
-| Field | Type | Required | Notes |
-| --- | --- | --- | --- |
-| `resume` | PDF file | Yes | Maximum 3 MB |
-| `selfDescription` | Text | Yes | Candidate's own summary |
-| `jobDescription` | Text | Yes | Target job description |
+The client uses `http://localhost:3000` automatically in development. To use another API, add `VITE_API_URL` to `Frontend/.env`.
 
-Frontend example:
+    cd Frontend
+    npm install
+    npm run dev
 
-```js
-const formData = new FormData()
-formData.append("resume", pdfFile)
-formData.append("selfDescription", selfDescription)
-formData.append("jobDescription", jobDescription)
+Open the Vite URL shown in the terminal, normally `http://localhost:5173`.
 
-const response = await fetch("http://localhost:3000/api/interview", {
-  method: "POST",
-  credentials: "include",
-  body: formData,
-})
+## Application Flow
 
-const data = await response.json()
-```
+1. A user registers or signs in.
+2. They add a job description and either a PDF resume or self-description.
+3. The API analyzes the profile with DeepSeek and saves a validated report to MongoDB.
+4. The dashboard presents the match score, skill gaps, questions, and preparation plan.
+5. A tailored resume PDF can be generated, saved privately to S3, previewed, and downloaded.
 
-Successful response: `201 Created`
+## API Overview
 
-```json
-{
-  "message": "interview report genrated succesfully",
-  "interviewReport": {
-    "_id": "...",
-    "title": "Backend Developer",
-    "matchScore": 78,
-    "technicalQuestions": [],
-    "behavioralQuestions": [],
-    "skillGaps": [],
-    "preparationPlan": []
-  }
-}
-```
+All interview routes require the authenticated browser cookie.
 
-Common failures: `400` for missing PDF, self-description, or job description; `401` for no/invalid login cookie; `502` when DeepSeek, JSON validation, PDF parsing, or database-side generation cannot complete.
+| Method | Route | Purpose |
+| --- | --- | --- |
+| POST | `/api/auth/register` | Create an account |
+| POST | `/api/auth/login` | Sign in |
+| GET | `/api/auth/logout` | Sign out |
+| GET | `/api/auth/get-me` | Retrieve the signed-in user |
+| POST | `/api/interview` | Generate and save an interview report |
+| GET | `/api/interview` | List the user's reports |
+| GET | `/api/interview/report/:interviewId` | Retrieve one report |
+| DELETE | `/api/interview/report/:interviewId` | Delete one report |
+| POST | `/api/interview/resume/pdf/:interviewReportId` | Generate a tailored resume PDF |
+| GET | `/api/interview/resume/pdf/:interviewReportId` | Get a temporary preview or download URL |
 
-## 4. API: generate a tailored resume PDF
+## Security and Validation
 
-`POST /api/interview/resume/pdf/:interviewReportId`
+- Only PDF resumes up to 3 MB are accepted.
+- AI responses and generated resume HTML are validated server-side.
+- Secrets belong in environment variables, never in Git or frontend code.
+- Resume files are private and accessed through time-limited signed URLs.
+- Local cookies use `SameSite=Lax`; production uses secure HTTPS cookies with `SameSite=None`.
 
-Replace `:interviewReportId` with the `_id` from the saved interview report. No request body is needed.
+## Scripts
 
-```js
-const response = await fetch(
-  `http://localhost:3000/api/interview/resume/pdf/${interviewReportId}`,
-  {
-    method: "POST",
-    credentials: "include",
-  },
-)
+| Directory | Command | Description |
+| --- | --- | --- |
+| `Frontend` | `npm run dev` | Start the Vite development server |
+| `Frontend` | `npm run build` | Build the production frontend |
+| `Frontend` | `npm run lint` | Run frontend linting |
+| `backend` | `npm run dev` | Start the Express API with Nodemon |
 
-if (!response.ok) throw new Error("Could not generate resume PDF")
-const pdfBlob = await response.blob()
-```
+## Resume Project Description
 
-Successful response: `200 OK`, with `Content-Type: application/pdf` and an attachment filename. The endpoint only allows the report owner to generate its PDF; another user's report ID returns `404`.
-
-## 5. DeepSeek flow
-
-### Interview report
-
-`PDF upload → text extraction → bounded resume/self-description/job-description prompt → DeepSeek JSON response → Zod validation → MongoDB save → report JSON response`
-
-### Resume PDF
-
-`saved report ID → owner check → saved candidate/job data → DeepSeek JSON response containing HTML → Zod validation → Puppeteer renders HTML → PDF download`
-
-## 6. Implementation decisions
-
-- **DeepSeek Chat Completions API:** The service sends requests to `https://api.deepseek.com/chat/completions` with `DEEPSEEK_API_KEY` as a Bearer token.
-- **JSON mode:** Both tasks request `response_format: { "type": "json_object" }`. Prompts explicitly require JSON so the result can be parsed reliably.
-- **Server-side validation:** The interview report and `{ "html": "..." }` resume payload are validated before they are saved or rendered.
-- **Prompt limits:** Large extracted PDFs are shortened before the provider call to keep requests predictable and reduce cost/latency.
-- **No invented resume data:** The resume prompt tells DeepSeek not to create candidate facts that are not present in the submitted information.
-- **Safe failures:** Missing configuration, DeepSeek errors, empty responses, malformed JSON, and invalid AI output stop the request and return a `502` response. An interview report is saved only after the AI output validates.
-- **PDF resource cleanup:** The headless browser is always closed, even if rendering fails.
-- **No new SDK:** The integration uses built-in `fetch`, so no DeepSeek npm dependency is required.
-
-## 7. Before production
-
-- Confirm the deployed backend can reach `api.deepseek.com` over HTTPS.
-- Set `DEEPSEEK_API_KEY` as a deployment secret, not a source-controlled variable.
-- Configure the production frontend URL in the CORS allowlist in `backend/src/app.js`.
-- Test both endpoints with a real account, a real PDF, and a funded/active DeepSeek key.
+**Prepwise - AI Interview Preparation Platform**
+Built a full-stack web application that analyzes candidate profiles against job descriptions to generate interview reports, skill-gap insights, technical and behavioral questions, preparation roadmaps, and tailored resume PDFs.
