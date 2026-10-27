@@ -44,6 +44,7 @@ function PlanModal({ roadmap, onClose }) {
 function Interview() {
     const [activeNav, setActiveNav] = useState('dashboard')
     const [questionGroup, setQuestionGroup] = useState(null)
+    const [activeQuestionTab, setActiveQuestionTab] = useState('technical')
     const [isPlanOpen, setIsPlanOpen] = useState(false)
     const [isDownloadingResume, setIsDownloadingResume] = useState(false)
     const [resumePdfUrl, setResumePdfUrl] = useState(null)
@@ -63,11 +64,12 @@ function Interview() {
     const gaps = report.skillGaps || []
     const navItems = [['dashboard', 'Dashboard'], ['practice', 'Practice'], ['questions', 'Questions'], ['roadmap', 'Roadmap'], ['resources', 'Resources']]
     const areas = gaps.slice(0, 5).map((gap) => gap.skill)
-    const categories = [
-        { name: 'Technical', caption: `${report.technicalQuestions?.length || 0} questions`, symbol: icon.database, questions: report.technicalQuestions || [] },
-        { name: 'Behavioral', caption: `${report.behavioralQuestions?.length || 0} questions`, symbol: icon.people, questions: report.behavioralQuestions || [] },
-        { name: 'Preparation plan', caption: `${roadmap.length} focused days`, symbol: icon.file, questions: allQuestions },
+    const questionTabs = [
+        { id: 'technical', label: 'Technical', caption: `${report.technicalQuestions?.length || 0} questions`, symbol: icon.database },
+        { id: 'behavioral', label: 'Behavioral', caption: `${report.behavioralQuestions?.length || 0} questions`, symbol: icon.people },
+        { id: 'plan', label: 'Preparation plan', caption: `${roadmap.length} focused days`, symbol: icon.file },
     ]
+    const activeQuestions = activeQuestionTab === 'technical' ? report.technicalQuestions || [] : report.behavioralQuestions || []
     const jumpTo = (id) => { setActiveNav(id); document.getElementById(id === 'dashboard' ? 'overview' : id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
     const hasSavedResume = report.generatedResume?.status === 'ready'
     const viewResume = async () => {
@@ -102,7 +104,11 @@ function Interview() {
                 {roadmap.length ? roadmap.map((day, index) => <article className={`roadmap-item ${index === 0 ? 'roadmap-item--active' : ''}`} key={day.day}><span>Day {day.day}</span><div className='roadmap-icon'>{getIcon(day.focus)}</div><h3>{day.focus}</h3><p>{day.tasks?.[0] || 'Build confidence'}</p><div className='roadmap-progress'><i style={{ width: `${index === 0 ? 100 : Math.max(12, 78 - index * 15)}%` }} /></div></article>) : <p className='empty-state'>Your personalized roadmap will be ready here shortly.</p>}
             </div></section>
             <section className='dashboard-grid'>
-                <article id='questions' className='dashboard-card question-categories'><header><h2>Top Interview Questions</h2><button className='text-action' onClick={() => setQuestionGroup({ title: 'All interview questions', questions: allQuestions })}>View All {icon.arrow}</button></header>{categories.map((category) => <button key={category.name} onClick={() => setQuestionGroup({ title: category.name, questions: category.questions })}><i>{category.symbol}</i><span><strong>{category.name}</strong><small>{category.caption}</small></span><b>{icon.arrow}</b></button>)}</article>
+                <article id='questions' className='dashboard-card question-workspace'>
+                    <header><div><h2>{activeQuestionTab === 'plan' ? 'Preparation Plan' : 'Interview Questions'}</h2><p>{activeQuestionTab === 'plan' ? 'A focused path for your upcoming interview.' : 'Open each question to review a strong response.'}</p></div>{activeQuestionTab !== 'plan' && <button className='text-action' onClick={() => setQuestionGroup({ title: `${activeQuestionTab === 'technical' ? 'Technical' : 'Behavioral'} questions`, questions: activeQuestions })}>View All {icon.arrow}</button>}</header>
+                    <div className='question-tabs' role='tablist' aria-label='Interview question categories'>{questionTabs.map((tab) => <button key={tab.id} role='tab' aria-selected={activeQuestionTab === tab.id} className={activeQuestionTab === tab.id ? 'active' : ''} onClick={() => setActiveQuestionTab(tab.id)}><i>{tab.symbol}</i><span><strong>{tab.label}</strong><small>{tab.caption}</small></span></button>)}</div>
+                    {activeQuestionTab === 'plan' ? <div className='inline-plan'>{roadmap.length ? roadmap.map((day) => <article key={day.day}><span>Day {day.day}</span><div><h3>{day.focus}</h3><p>{day.tasks?.[0] || 'Review and practise this focus area.'}</p></div><button onClick={() => setIsPlanOpen(true)}>View tasks {icon.arrow}</button></article>) : <p className='empty-state'>Your preparation plan will appear here once it is ready.</p>}</div> : <div className='inline-questions'>{activeQuestions.length ? activeQuestions.slice(0, 3).map((item, index) => <article key={index}><span>{String(index + 1).padStart(2, '0')}</span><div><h3>{item.question}</h3><p>{item.intention}</p></div><button onClick={() => setQuestionGroup({ title: activeQuestionTab === 'technical' ? 'Technical questions' : 'Behavioral questions', questions: [item] })}>Open {icon.arrow}</button></article>) : <p className='empty-state'>No questions were generated for this category.</p>}</div>}
+                </article>
             </section>
         </section>
         {questionGroup && <QuestionModal {...questionGroup} onClose={() => setQuestionGroup(null)} />}
