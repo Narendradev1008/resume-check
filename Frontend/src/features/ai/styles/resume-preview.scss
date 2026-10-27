@@ -13,9 +13,9 @@
         width: min(960px, 100%);
         height: min(90vh, 900px);
         overflow: hidden;
-        border: 1px solid #2a3348;
+        border: 1px solid #2e3d55;
         border-radius: 14px;
-        background: #161b22;
+        background: #111c2d;
         box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
     }
 
@@ -29,17 +29,17 @@
     }
 
     &__header {
-        border-bottom: 1px solid #2a3348;
+        border-bottom: 1px solid #2e3d55;
 
         h2 {
             margin: 0;
-            color: #e6edf3;
+            color: #f4f6ff;
             font-size: 1.1rem;
         }
 
         p {
             margin: 4px 0 0;
-            color: #8b949e;
+            color: #aab5d0;
             font-size: 0.9rem;
         }
     }
@@ -53,7 +53,7 @@
 
     &__footer {
         justify-content: flex-end;
-        border-top: 1px solid #2a3348;
+        border-top: 1px solid #2e3d55;
     }
 
     &__close {
@@ -61,14 +61,14 @@
         height: 34px;
         border: 0;
         border-radius: 8px;
-        color: #e6edf3;
+        color: #f4f6ff;
         background: transparent;
         font-size: 1.8rem;
         line-height: 1;
         cursor: pointer;
 
         &:hover {
-            background: #2a3348;
+            background: #2e3d55;
         }
     }
 }
