@@ -3,11 +3,16 @@ const bcrypt=require('bcryptjs');
 const jwt=require('jsonwebtoken');
 const tokenBlacklistModel =require('../models/blacklist.model')
 
+// HTTPS is required for Secure / SameSite=None cookies. Local Vite + Express
+// runs on http://localhost, so use a normal same-site cookie in development.
+// This keeps production cross-site authentication intact without preventing
+// the browser from storing the local login token.
+const isProduction = process.env.NODE_ENV === 'production'
 const cookieOptions = {
   httpOnly: true,
-  secure: true,      // Required for HTTPS cross-site requests
-  sameSite: 'none'   // Required for cross-domain requests (localhost <-> Render)
-};
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
+}
 
 
 /**
