@@ -1,4 +1,4 @@
-import {getAllInterviewReports,genrateInterviewReport, getInterviewReportById,generateResumePdf, getSavedResumePdf} from '../services/interview.api.js'
+import {getAllInterviewReports,genrateInterviewReport, getInterviewReportById,generateResumePdf, getSavedResumePdf, deleteInterviewReport} from '../services/interview.api.js'
 import { useContext,useEffect } from 'react'
 import { useParams } from "react-router"
 
@@ -59,6 +59,12 @@ export const useInterview = () => {
 
         return response.interviewReport
     }
+
+    const removeReport = async (interviewId) => {
+        await deleteInterviewReport(interviewId)
+        setReports((currentReports) => currentReports.filter((item) => item._id !== interviewId))
+        setReport((currentReport) => currentReport?._id === interviewId ? null : currentReport)
+    }
      const getResumePdf = async (interviewReportId) => {
         setLoading(true)
         try {
@@ -86,7 +92,7 @@ export const useInterview = () => {
    
 
     
-    return { loading, report, reports, generateReport, getReportById, getReports, getResumePdf, getResumeDownloadUrl }
+    return { loading, report, reports, generateReport, getReportById, getReports, removeReport, getResumePdf, getResumeDownloadUrl }
 
 
 }

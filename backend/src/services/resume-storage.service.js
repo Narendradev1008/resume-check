@@ -1,4 +1,4 @@
-const { GetObjectCommand, PutObjectCommand, S3Client } = require("@aws-sdk/client-s3")
+const { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } = require("@aws-sdk/client-s3")
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner")
 
 const bucketName = process.env.AWS_S3_BUCKET
@@ -42,4 +42,13 @@ async function createResumeDownloadUrl(storageKey, { download = false } = {}) {
   }), { expiresIn: 60 * 10 })
 }
 
-module.exports = { uploadResumePdf, createResumeDownloadUrl }
+async function deleteResumePdf(storageKey) {
+  ensureStorageIsConfigured()
+
+  await s3Client.send(new DeleteObjectCommand({
+    Bucket: bucketName,
+    Key: storageKey,
+  }))
+}
+
+module.exports = { uploadResumePdf, createResumeDownloadUrl, deleteResumePdf }

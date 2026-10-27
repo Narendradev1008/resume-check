@@ -1,7 +1,8 @@
 import axios from "axios";
+import { API_BASE_URL } from "../../../config/api.js";
 
 const api=axios.create({
-  baseURL: "https://resume-check-4qlt.onrender.com/",
+  baseURL: API_BASE_URL,
   withCredentials: true,
 })
 
@@ -34,6 +35,12 @@ export const getInterviewReportById = async (interviewId) => {
  */
 export const getAllInterviewReports = async () => {
     const response = await api.get("/api/interview/")
+
+    return response.data
+}
+
+export const deleteInterviewReport = async (interviewId) => {
+    const response = await api.delete(`/api/interview/report/${interviewId}`)
 
     return response.data
 }

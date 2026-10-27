@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../../../config/api.js';
 const api=axios.create({
-  baseURL:"https://resume-check-4qlt.onrender.com",
+  baseURL: API_BASE_URL,
   withCredentials:true
 })
 export async function register({username,email,password}) {

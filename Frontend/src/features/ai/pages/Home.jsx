@@ -16,11 +16,12 @@ const REPORT_GENERATION_STEPS = [
 
 function Home() {
 
-    const { loading, generateReport,reports,getReports } = useInterview()
+    const { loading, generateReport, reports, getReports, removeReport } = useInterview()
     const { user, handleLogout } = useAuth()
     const [ jobDescription, setJobDescription ] = useState("")
     const [ selfDescription, setSelfDescription ] = useState("")
     const [ isGeneratingReport, setIsGeneratingReport ] = useState(false)
+    const [ deletingReportId, setDeletingReportId ] = useState(null)
     const resumeInputRef = useRef()
 
     const navigate = useNavigate()
@@ -42,6 +43,25 @@ function Home() {
     const logoutUser = async () => {
         await handleLogout()
         navigate('/login')
+    }
+
+    const handleDeleteReport = async (event, report) => {
+        event.stopPropagation()
+
+        if (!window.confirm(`Delete the interview plan for "${report.title || "this position"}"? This cannot be undone.`)) {
+            return
+        }
+
+        setDeletingReportId(report._id)
+        try {
+            await removeReport(report._id)
+        } catch (error) {
+            console.error("Unable to delete interview report:", error)
+            const message = error.response?.data?.message || "We couldn't delete this interview plan. Please try again."
+            window.alert(message)
+        } finally {
+            setDeletingReportId(null)
+        }
     }
 
    if (loading ) {
@@ -114,7 +134,7 @@ function Home() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /></svg>
                     </span>
                     <p className='dropzone__title'>Click to upload or drag &amp; drop</p>
-                    <p className='dropzone__subtitle'>PDF or DOCX (Max 5MB)</p>
+                    <p className='dropzone__subtitle'>PDF or DOCX (Max 3MB)</p>
                     <input ref={resumeInputRef} hidden type='file' id='resume' name='resume' aria-label="drag and drop resume" accept='.pdf,.docx' />
                 </label>
             </div>
@@ -163,7 +183,18 @@ function Home() {
         <ul className='reports-list'>
             {reports.map(report => (
                 <li key={report._id} className='report-item' onClick={() => navigate(`/interview/${report._id}`)}>
-                    <h3>{report.title || 'Untitled Position'}</h3>
+                    <div className='report-item__header'>
+                        <h3>{report.title || 'Untitled Position'}</h3>
+                        <button
+                            type='button'
+                            className='report-item__delete'
+                            onClick={(event) => handleDeleteReport(event, report)}
+                            disabled={deletingReportId === report._id}
+                            aria-label={`Delete ${report.title || 'interview plan'}`}
+                        >
+                            {deletingReportId === report._id ? 'Deleting…' : 'Delete'}
+                        </button>
+                    </div>
                     <p className='report-meta'>Generated on {new Date(report.createdAt).toLocaleDateString()}</p>
                     <p className={`match-score ${report.matchScore >= 80 ? 'score--high' : report.matchScore >= 60 ? 'score--mid' : 'score--low'}`}>Match Score: {report.matchScore}%</p>
                 </li>

@@ -1,7 +1,7 @@
 const pdfParse=require('pdf-parse');
 const {generateInterviewReport,generateResumePdf}=require('../services/ai.services');
 const interviewReportModel= require('../models/interviewReport.model')
-const { uploadResumePdf, createResumeDownloadUrl } = require('../services/resume-storage.service')
+const { uploadResumePdf, createResumeDownloadUrl, deleteResumePdf } = require('../services/resume-storage.service')
 /**
  * @description Controller to generate interview report based on user self description, resume and job description.
  */
@@ -83,6 +83,34 @@ async function getAllInterviewReportsController(req,res){
         message: "Interview reports fetched successfully.",
         interviewReports
     })
+}
+
+/**
+ * @description Delete one interview report owned by the logged-in user.
+ */
+async function deleteInterviewReportController(req, res) {
+    const { interviewId } = req.params
+
+    try {
+        const interviewReport = await interviewReportModel.findOneAndDelete({
+            _id: interviewId,
+            user: req.user.id,
+        })
+
+        if (!interviewReport) {
+            return res.status(404).json({ message: "Interview report not found." })
+        }
+
+        if (interviewReport.generatedResume?.storageKey) {
+            deleteResumePdf(interviewReport.generatedResume.storageKey).catch((error) => {
+                console.error("Generated resume cleanup failed:", error.message)
+            })
+        }
+
+        return res.status(200).json({ message: "Interview report deleted successfully." })
+    } catch (error) {
+        return res.status(400).json({ message: "Invalid interview report id." })
+    }
 }
 
 /**
@@ -187,4 +215,4 @@ async function getSavedResumePdfController(req, res) {
 }
 
 
-module.exports={generateInterViewReportController,getInterviewReportByIdController,getAllInterviewReportsController,generateResumePdfController,getSavedResumePdfController};
+module.exports={generateInterViewReportController,getInterviewReportByIdController,getAllInterviewReportsController,deleteInterviewReportController,generateResumePdfController,getSavedResumePdfController};

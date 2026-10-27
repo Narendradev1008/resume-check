@@ -371,6 +371,39 @@ $font-stack:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Robot
             gap: 0.5rem;
             cursor: pointer;
 
+            &__header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 0.75rem;
+
+                h3 {
+                    overflow-wrap: anywhere;
+                }
+            }
+
+            &__delete {
+                flex-shrink: 0;
+                padding: 0.35rem 0.55rem;
+                border: 1px solid rgba($accent, 0.6);
+                border-radius: 0.35rem;
+                color: $accent-alt;
+                background: transparent;
+                font: inherit;
+                font-size: 0.75rem;
+                cursor: pointer;
+
+                &:hover:not(:disabled) {
+                    color: #fff;
+                    background-color: $accent;
+                }
+
+                &:disabled {
+                    cursor: wait;
+                    opacity: 0.65;
+                }
+            }
+
             .match-score {
                 font-size: 0.8rem;
                 font-weight: 600;
@@ -440,5 +473,115 @@ $font-stack:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Robot
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+// Mobile layout
+@media (max-width: 700px) {
+    .home-page {
+        justify-content: flex-start;
+        padding: 1rem;
+        gap: 1.5rem;
+
+        &__topbar {
+            position: static;
+            width: 100%;
+            justify-content: space-between;
+            font-size: 0.8rem;
+        }
+    }
+
+    .page-header {
+        h1 {
+            font-size: clamp(1.75rem, 8vw, 2.25rem);
+            line-height: 1.2;
+        }
+
+        p {
+            font-size: 0.9rem;
+        }
+    }
+
+    .interview-card {
+        &__body {
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        &__footer {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.85rem;
+            padding: 1rem;
+
+            .footer-info {
+                text-align: center;
+            }
+        }
+    }
+
+    .panel-divider {
+        width: auto;
+        height: 1px;
+    }
+
+    .panel {
+        padding: 1.25rem 1rem;
+
+        &__textarea {
+            flex: unset;
+            min-height: 220px;
+        }
+
+        &__textarea--short {
+            min-height: 96px;
+        }
+
+        &--left .char-counter {
+            position: static;
+            margin-top: -0.5rem;
+            text-align: right;
+        }
+    }
+
+    .generate-btn {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .recent-reports .reports-list {
+        grid-template-columns: 1fr;
+    }
+
+    .page-footer {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        padding-bottom: 0.5rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .home-page {
+        padding: 0.75rem;
+    }
+
+    .panel__header {
+        flex-wrap: wrap;
+    }
+
+    .section-label {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .dropzone {
+        padding: 1.25rem 0.75rem;
+
+        &__title {
+            text-align: center;
+        }
     }
 }
