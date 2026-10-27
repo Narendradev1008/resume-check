@@ -22,12 +22,22 @@ function Home() {
     const [ selfDescription, setSelfDescription ] = useState("")
     const [ isGeneratingReport, setIsGeneratingReport ] = useState(false)
     const [ deletingReportId, setDeletingReportId ] = useState(null)
+    const [ reportPendingDeletion, setReportPendingDeletion ] = useState(null)
+    const [ successMessage, setSuccessMessage ] = useState("")
+    const [ deleteError, setDeleteError ] = useState("")
     const resumeInputRef = useRef()
 
     const navigate = useNavigate()
     useEffect(() => {
         getReports()
     }, [])
+
+    useEffect(() => {
+        if (!successMessage) return
+
+        const timeoutId = window.setTimeout(() => setSuccessMessage(""), 4000)
+        return () => window.clearTimeout(timeoutId)
+    }, [successMessage])
 
     const handleGenerateReport = async () => {
         setIsGeneratingReport(true)
@@ -45,20 +55,25 @@ function Home() {
         navigate('/login')
     }
 
-    const handleDeleteReport = async (event, report) => {
+    const promptDeleteReport = (event, report) => {
         event.stopPropagation()
+        setDeleteError("")
+        setReportPendingDeletion(report)
+    }
 
-        if (!window.confirm(`Delete the interview plan for "${report.title || "this position"}"? This cannot be undone.`)) {
-            return
-        }
+    const handleDeleteReport = async () => {
+        if (!reportPendingDeletion) return
 
+        const report = reportPendingDeletion
         setDeletingReportId(report._id)
         try {
             await removeReport(report._id)
+            setReportPendingDeletion(null)
+            setSuccessMessage("Interview plan deleted successfully.")
         } catch (error) {
             console.error("Unable to delete interview report:", error)
             const message = error.response?.data?.message || "We couldn't delete this interview plan. Please try again."
-            window.alert(message)
+            setDeleteError(message)
         } finally {
             setDeletingReportId(null)
         }
@@ -188,7 +203,7 @@ function Home() {
                         <button
                             type='button'
                             className='report-item__delete'
-                            onClick={(event) => handleDeleteReport(event, report)}
+                            onClick={(event) => promptDeleteReport(event, report)}
                             disabled={deletingReportId === report._id}
                             aria-label={`Delete ${report.title || 'interview plan'}`}
                         >
@@ -209,6 +224,48 @@ function Home() {
         <a href='#'>Terms of Service</a>
         <a href='#'>Help Center</a>
     </footer>
+
+    {reportPendingDeletion && (
+        <div className='delete-modal-backdrop' role='presentation' onMouseDown={() => !deletingReportId && setReportPendingDeletion(null)}>
+            <section
+                className='delete-modal'
+                role='dialog'
+                aria-modal='true'
+                aria-labelledby='delete-modal-title'
+                onMouseDown={(event) => event.stopPropagation()}
+            >
+                <h2 id='delete-modal-title'>Delete interview plan?</h2>
+                <p>
+                    Delete <strong>{reportPendingDeletion.title || 'this interview plan'}</strong>? This action cannot be undone.
+                </p>
+                {deleteError && <p className='delete-modal__error'>{deleteError}</p>}
+                <div className='delete-modal__actions'>
+                    <button
+                        type='button'
+                        className='delete-modal__cancel'
+                        onClick={() => { setReportPendingDeletion(null); setDeleteError("") }}
+                        disabled={Boolean(deletingReportId)}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type='button'
+                        className='delete-modal__confirm'
+                        onClick={handleDeleteReport}
+                        disabled={Boolean(deletingReportId)}
+                    >
+                        {deletingReportId ? 'Deleting…' : 'Delete plan'}
+                    </button>
+                </div>
+            </section>
+        </div>
+    )}
+
+    {successMessage && (
+        <div className='status-toast' role='status' aria-live='polite'>
+            {successMessage}
+        </div>
+    )}
 </div>
   )
 }
