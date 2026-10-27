@@ -97,6 +97,13 @@ $font-stack: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
             }
         }
     }
+
+    &__error {
+        margin: 16px 0 0;
+        color: #ff9dca;
+        font-size: 0.85rem;
+        text-align: center;
+    }
 }
 
 .input-group {

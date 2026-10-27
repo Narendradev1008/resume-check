@@ -35,4 +35,11 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' })
 })
 
+app.use((error, req, res, next) => {
+  if (error) {
+    return res.status(400).json({ message: error.message || "Request could not be processed." })
+  }
+  next()
+})
+
 module.exports=app;

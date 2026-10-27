@@ -15,9 +15,10 @@ export const useAuth =()=>{
     try{
     const data=await login({email,password});
     setUser(data.user);
+    return data
     }
     catch(err){
-      console.log(err);
+      throw err
     }
     finally{
       setLoading(false);
@@ -30,9 +31,10 @@ export const useAuth =()=>{
     try{
     const data=await register({username,email,password});
     setUser(data.user);
+    return data
     }
     catch(err){
-      console.log(err);
+      throw err
     }
     finally{
     setLoading(false);
@@ -46,9 +48,10 @@ export const useAuth =()=>{
     setUser(null);
     }
     catch(err){
-      console.log(err);
+      console.error("Logout failed:", err)
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
    useEffect( ()=>{

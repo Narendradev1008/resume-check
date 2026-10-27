@@ -9,11 +9,17 @@ function Register() {
   const [username,setUsername]=useState("");
   const [email,setEmail]=useState("");
   const [password,setPasssword]=useState("");
+  const [error,setError]=useState("")
 
   const handleSumbit=async (e)=>{
     e.preventDefault();
-    const res=await handleRegister({username,email,password})
-    navigate("/")
+    setError("")
+    try {
+      await handleRegister({username,email,password})
+      navigate("/")
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to create your account. Please try again.")
+    }
   }
   if(loading){
       return (
@@ -49,6 +55,7 @@ function Register() {
         </div>
           <button className='auth-card__submit' type="submit">Create account</button>
         </form>
+        {error && <p className="auth-card__error" role="alert">{error}</p>}
         <p className="auth-card__switch">Already have an account?
           <Link to={"/login"}> Sign in</Link>
         </p>

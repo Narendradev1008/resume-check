@@ -6,20 +6,23 @@ const { uploadResumePdf, createResumeDownloadUrl, deleteResumePdf } = require('.
  * @description Controller to generate interview report based on user self description, resume and job description.
  */
 async function generateInterViewReportController(req,res){
-  if (!req.file) {
-      return res.status(400).json({ message: "Resume PDF file is required." });
-  }
-
   const { selfDescription, jobDescription } = req.body
-  if (!selfDescription || !jobDescription) {
+  if (!jobDescription?.trim()) {
     return res.status(400).json({
-      message: "Self description and job description are required.",
+      message: "Job description is required.",
+    })
+  }
+  if (!req.file && !selfDescription?.trim()) {
+    return res.status(400).json({
+      message: "Upload a resume or add a short self-description.",
     })
   }
 
   try {
     const startedAt = Date.now()
-    const resumeContent= await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
+    const resumeContent = req.file
+      ? await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
+      : { text: "" }
     const pdfParsedAt = Date.now()
 
     const interviewReportByAi=await generateInterviewReport(
@@ -29,7 +32,7 @@ async function generateInterViewReportController(req,res){
     const interviewReport=await interviewReportModel.create({
         user: req.user.id,
         resume: resumeContent.text,
-        selfDescription,
+        selfDescription: selfDescription || "",
         jobDescription,
         ...interviewReportByAi
     })

@@ -10,11 +10,17 @@ function Login() {
 
   const [email,setEmail]=useState("");
   const [password,setPassword]=useState("")
+  const [error,setError]=useState("")
 
   const  handleSumbit=async (e)=>{
     e.preventDefault();
-    await handleLogin({email,password});
-    navigate('/');
+    setError("")
+    try {
+      await handleLogin({email,password});
+      navigate('/');
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to sign in. Please try again.")
+    }
     }
   
 
@@ -43,6 +49,7 @@ function Login() {
         </div>
           <button className='auth-card__submit' type="submit">Sign in</button>
         </form>
+        {error && <p className="auth-card__error" role="alert">{error}</p>}
         <p className="auth-card__switch">Don't have an account?
           <Link to={'/register'}> Create one</Link>
         </p>

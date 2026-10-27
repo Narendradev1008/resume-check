@@ -45,6 +45,7 @@ function Interview() {
     const [activeNav, setActiveNav] = useState('dashboard')
     const [questionGroup, setQuestionGroup] = useState(null)
     const [activeQuestionTab, setActiveQuestionTab] = useState('technical')
+    const [loadError, setLoadError] = useState('')
     const [isPlanOpen, setIsPlanOpen] = useState(false)
     const [isDownloadingResume, setIsDownloadingResume] = useState(false)
     const [resumePdfUrl, setResumePdfUrl] = useState(null)
@@ -54,10 +55,17 @@ function Interview() {
     const { interviewId } = useParams()
     const navigate = useNavigate()
 
-    useEffect(() => { if (interviewId) getReportById(interviewId) }, [interviewId])
+    useEffect(() => {
+        if (!interviewId) return
+        setLoadError('')
+        getReportById(interviewId).catch((error) => {
+            setLoadError(error.response?.data?.message || 'We could not load this interview report.')
+        })
+    }, [interviewId])
     const allQuestions = useMemo(() => [...(report?.technicalQuestions || []), ...(report?.behavioralQuestions || [])], [report])
     if (isDownloadingResume) return <GenerationProgress title='Your resume is being prepared' steps={STEPS} />
-    if (loading || !report) return <main className='loading-screen'><div className='loading-spinner' /></main>
+    if (loading) return <main className='loading-screen'><div className='loading-spinner' /></main>
+    if (loadError || !report) return <main className='report-error'><div><p className='dashboard__eyebrow'>Interview report</p><h1>{loadError || 'Report unavailable'}</h1><button className='resume-button' onClick={() => navigate('/')}>Back to plans</button></div></main>
 
     const score = report.matchScore || 0
     const roadmap = report.preparationPlan || []

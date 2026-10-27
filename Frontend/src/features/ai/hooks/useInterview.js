@@ -1,11 +1,9 @@
 import {getAllInterviewReports,genrateInterviewReport, getInterviewReportById,generateResumePdf, getSavedResumePdf, deleteInterviewReport} from '../services/interview.api.js'
-import { useContext,useEffect } from 'react'
-import { useParams } from "react-router"
+import { useContext } from 'react'
 
 import {InterviewContext}from '../interview.context.jsx'
 export const useInterview = () => {
 
-    const {interviewId}=useParams();
      const context=useContext(InterviewContext);
 
      if (!context) {
@@ -15,29 +13,28 @@ export const useInterview = () => {
 
     const generateReport=async({jobDescription,selfDescription,resumeFile})=>{
       setLoading(true);
-      let response=null;
       try{
-        response =await genrateInterviewReport({jobDescription,selfDescription,resumeFile})
+        const response =await genrateInterviewReport({jobDescription,selfDescription,resumeFile})
         setReport(response.interviewReport)
+        return response.interviewReport
       }
       catch(err){
-          console.log(err)
+          throw err
       }finally{
         setLoading(false);
       }
-      return response.interviewReport
     }
 
 
       const getReportById = async (interviewId) => {
         setLoading(true)
-        let response=null;
         try {
-            response = await getInterviewReportById(interviewId)
+            const response = await getInterviewReportById(interviewId)
             setReport(response.interviewReport)
             return response.interviewReport
         } catch (error) {
-            console.log(error)
+            setReport(null)
+            throw error
         } finally {
             setLoading(false)
         }
@@ -47,17 +44,16 @@ export const useInterview = () => {
      
      const getReports = async () => {
         setLoading(true)
-        let response = null
         try {
-            response = await getAllInterviewReports()
+            const response = await getAllInterviewReports()
             setReports(response.interviewReports)
+            return response.interviewReports
         } catch (error) {
-            console.log(error)
+            setReports([])
+            throw error
         } finally {
             setLoading(false)
         }
-
-        return response.interviewReport
     }
 
     const removeReport = async (interviewId) => {
